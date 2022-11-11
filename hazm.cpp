@@ -22,6 +22,7 @@ HazmObject::HazmObject(const std::string &py_name, const std::vector<std::pair<s
 
         auto pName = PyUnicode_FromString("hazm");
         m_hazm_module = PyImport_Import(pName);
+        Py_DECREF(pName);
 
         if (m_hazm_module)
             m_hazm_dict = PyModule_GetDict(m_hazm_module);
@@ -42,7 +43,10 @@ HazmObject::HazmObject(const std::string &py_name, const std::vector<std::pair<s
     }
     else
     {
-        auto fnc = PyDict_GetItem(m_hazm_dict, PyUnicode_FromString(py_name.c_str()));
+        auto str = PyUnicode_FromString(py_name.c_str());
+        auto fnc = PyDict_GetItem(m_hazm_dict, str);
+        Py_DECREF(str);
+
         m_object = PyObject_CallObject(fnc, NULL);
     }
 
@@ -96,16 +100,14 @@ std::vector<std::string> HazmObject::pyObjectToVector(HazmPyObject* incoming)
 HazmObject::~HazmObject()
 {
     if (m_object)
-        PyObject_Free(m_object);
+        Py_DECREF(m_object);
 
     m_hazm_objects.erase(this);
     if (m_hazm_objects.size() == 0)
     {
-        PyObject_Free(m_hazm_dict);
-        PyObject_Free(m_hazm_module);
+        Py_DECREF(m_hazm_module);
         m_hazm_dict = nullptr;
         m_hazm_module = nullptr;
-//        Py_Finalize();
     }
 }
 
@@ -120,18 +122,25 @@ Normalizer::Normalizer()
 Normalizer::~Normalizer()
 {
     if (m_normalize_method)
-        PyObject_Free(m_normalize_method);
+        Py_DECREF(m_normalize_method);
 }
 
 std::string Normalizer::normalize(const std::string &text)
 {
-    m_normalize_method = PyObject_GetAttrString(m_object, "normalize");
+    if (!m_normalize_method)
+        m_normalize_method = PyObject_GetAttrString(m_object, "normalize");
     if (!m_normalize_method)
         throw std::string("Could not load Normalizer::normalize"s);
 
-    auto args = PyTuple_Pack(1, PyUnicode_FromString(text.c_str()));
-    auto res = PyObject_CallObject(m_normalize_method, args);
-    return PyUnicode_AsUTF8(res);
+    auto str = PyUnicode_FromString(text.c_str());
+    auto args = PyTuple_Pack(1, str);
+    Py_DECREF(str);
+
+    auto pyres = PyObject_CallObject(m_normalize_method, args);
+    const std::string res = PyUnicode_AsUTF8(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 
@@ -144,18 +153,25 @@ Stemmer::Stemmer()
 Stemmer::~Stemmer()
 {
     if (m_stem_method)
-        PyObject_Free(m_stem_method);
+        Py_DECREF(m_stem_method);
 }
 
 std::string Stemmer::stem(const std::string &text)
 {
-    m_stem_method = PyObject_GetAttrString(m_object, "stem");
+    if (!m_stem_method)
+        m_stem_method = PyObject_GetAttrString(m_object, "stem");
     if (!m_stem_method)
         throw std::string("Could not load Stemmer::stem"s);
 
-    auto args = PyTuple_Pack(1, PyUnicode_FromString(text.c_str()));
-    auto res = PyObject_CallObject(m_stem_method, args);
-    return PyUnicode_AsUTF8(res);
+    auto str = PyUnicode_FromString(text.c_str());
+    auto args = PyTuple_Pack(1, str);
+    Py_DECREF(str);
+
+    auto pyres = PyObject_CallObject(m_stem_method, args);
+    const std::string res = PyUnicode_AsUTF8(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 
@@ -168,18 +184,25 @@ Lemmatizer::Lemmatizer()
 Lemmatizer::~Lemmatizer()
 {
     if (m_lemmatize_method)
-        PyObject_Free(m_lemmatize_method);
+        Py_DECREF(m_lemmatize_method);
 }
 
 std::string Lemmatizer::lemmatize(const std::string &text)
 {
-    m_lemmatize_method = PyObject_GetAttrString(m_object, "lemmatize");
+    if (!m_lemmatize_method)
+        m_lemmatize_method = PyObject_GetAttrString(m_object, "lemmatize");
     if (!m_lemmatize_method)
         throw std::string("Could not load Lemmatizer::lemmatize"s);
 
-    auto args = PyTuple_Pack(1, PyUnicode_FromString(text.c_str()));
-    auto res = PyObject_CallObject(m_lemmatize_method, args);
-    return PyUnicode_AsUTF8(res);
+    auto str = PyUnicode_FromString(text.c_str());
+    auto args = PyTuple_Pack(1, str);
+    Py_DECREF(str);
+
+    auto pyres = PyObject_CallObject(m_lemmatize_method, args);
+    const std::string res = PyUnicode_AsUTF8(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 
@@ -192,18 +215,25 @@ SentenceTokenizer::SentenceTokenizer()
 SentenceTokenizer::~SentenceTokenizer()
 {
     if (m_tokenize_method)
-        PyObject_Free(m_tokenize_method);
+        Py_DECREF(m_tokenize_method);
 }
 
 std::vector<std::string> SentenceTokenizer::tokenize(const std::string &text)
 {
-    m_tokenize_method = PyObject_GetAttrString(m_object, "tokenize");
+    if (!m_tokenize_method)
+        m_tokenize_method = PyObject_GetAttrString(m_object, "tokenize");
     if (!m_tokenize_method)
         throw std::string("Could not load SentenceTokenizer::tokenize"s);
 
-    auto args = PyTuple_Pack(1, PyUnicode_FromString(text.c_str()));
-    auto res = PyObject_CallObject(m_tokenize_method, args);
-    return pyObjectToVector(res);
+    auto str = PyUnicode_FromString(text.c_str());
+    auto args = PyTuple_Pack(1, str);
+    Py_DECREF(str);
+
+    auto pyres = PyObject_CallObject(m_tokenize_method, args);
+    const auto res = pyObjectToVector(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 WordTokenizer::WordTokenizer()
@@ -214,18 +244,25 @@ WordTokenizer::WordTokenizer()
 WordTokenizer::~WordTokenizer()
 {
     if (m_tokenize_method)
-        PyObject_Free(m_tokenize_method);
+        Py_DECREF(m_tokenize_method);
 }
 
 std::vector<std::string> WordTokenizer::tokenize(const std::string &text)
 {
-    m_tokenize_method = PyObject_GetAttrString(m_object, "tokenize");
+    if (!m_tokenize_method)
+        m_tokenize_method = PyObject_GetAttrString(m_object, "tokenize");
     if (!m_tokenize_method)
         throw std::string("Could not load WordTokenizer::tokenize"s);
 
-    auto args = PyTuple_Pack(1, PyUnicode_FromString(text.c_str()));
-    auto res = PyObject_CallObject(m_tokenize_method, args);
-    return pyObjectToVector(res);
+    auto str = PyUnicode_FromString(text.c_str());
+    auto args = PyTuple_Pack(1, str);
+    Py_DECREF(str);
+
+    auto pyres = PyObject_CallObject(m_tokenize_method, args);
+    const auto res = pyObjectToVector(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 
@@ -238,7 +275,7 @@ POSTagger::POSTagger(const std::string &model)
 POSTagger::~POSTagger()
 {
     if (m_tag_method)
-        PyObject_Free(m_tag_method);
+        Py_DECREF(m_tag_method);
 }
 
 std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* incoming)
@@ -254,8 +291,8 @@ std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* in
                 continue;
 
             POSTagger::TagItem t;
-            t.label = pair.at(0);
-            t.word = pair.at(1);
+            t.label = pair.at(1);
+            t.word = pair.at(0);
             res.push_back(t);
         }
     }
@@ -269,8 +306,8 @@ std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* in
                 continue;
 
             POSTagger::TagItem t;
-            t.label = pair.at(0);
-            t.word = pair.at(1);
+            t.label = pair.at(1);
+            t.word = pair.at(0);
             res.push_back(t);
         }
     }
@@ -299,13 +336,20 @@ HazmPyObject *POSTagger::pyObjectToTagsVector(const std::vector<TagItem> &data)
 
 std::vector<POSTagger::TagItem> POSTagger::tag(const std::vector<std::string> &tokens)
 {
-    m_tag_method = PyObject_GetAttrString(m_object, "tag");
+    if (!m_tag_method)
+        m_tag_method = PyObject_GetAttrString(m_object, "tag");
     if (!m_tag_method)
         throw std::string("Could not load POSTagger::tokenize"s);
 
-    auto args = PyTuple_Pack(1, vectorToPyObject(tokens));
-    auto res = PyObject_CallObject(m_tag_method, args);
-    return pyObjectToTagsVector(res);
+    auto toks = vectorToPyObject(tokens);
+    auto args = PyTuple_Pack(1, toks);
+    Py_DECREF(toks);
+
+    auto pyres = PyObject_CallObject(m_tag_method, args);
+    const auto res = pyObjectToTagsVector(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 
@@ -319,18 +363,22 @@ Chunker::Chunker(const std::string &model)
 Chunker::~Chunker()
 {
     if (m_parse_method)
-        PyObject_Free(m_parse_method);
+        Py_DECREF(m_parse_method);
 }
 
 Chunker::TreeNode Chunker::parse(const std::vector<POSTagger::TagItem> &tags)
 {
-    m_parse_method = PyObject_GetAttrString(m_object, "parse");
+    if (!m_parse_method)
+        m_parse_method = PyObject_GetAttrString(m_object, "parse");
     if (!m_parse_method)
         throw std::string("Could not load Chunker::parse"s);
 
     auto args = PyTuple_Pack(1, POSTagger::pyObjectToTagsVector(tags));
-    auto res = PyObject_CallObject(m_parse_method, args);
-    return pyObjectToTreeNode(res);
+    auto pyres = PyObject_CallObject(m_parse_method, args);
+    const auto res = pyObjectToTreeNode(pyres);
+    Py_DECREF(pyres);
+    Py_DECREF(args);
+    return res;
 }
 
 Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
