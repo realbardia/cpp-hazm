@@ -370,7 +370,7 @@ Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
     return node;
 }
 
-std::vector<std::string> sen_tokenize(const std::string &text)
+std::vector<std::string> sent_tokenize(const std::string &text)
 {
     return SentenceTokenizer().tokenize(text);
 }
