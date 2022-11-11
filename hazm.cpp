@@ -369,3 +369,13 @@ Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
 
     return node;
 }
+
+std::vector<std::string> sen_tokenize(const std::string &text)
+{
+    return SentenceTokenizer().tokenize(text);
+}
+
+std::vector<std::string> word_tokenize(const std::string &text)
+{
+    return WordTokenizer().tokenize(text);
+}
