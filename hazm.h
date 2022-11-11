@@ -78,9 +78,7 @@ private:
     HazmPyObject *m_tokenize_method = nullptr;
 };
 
-std::vector<std::string> sen_tokenize(const std::string &text) {
-    return SentenceTokenizer().tokenize(text);
-}
+std::vector<std::string> sent_tokenize(const std::string &text);
 
 
 class WordTokenizer: public HazmObject
@@ -95,9 +93,7 @@ private:
     HazmPyObject *m_tokenize_method = nullptr;
 };
 
-std::vector<std::string> word_tokenize(const std::string &text) {
-    return WordTokenizer().tokenize(text);
-}
+std::vector<std::string> word_tokenize(const std::string &text);
 
 
 class POSTagger: public HazmObject
