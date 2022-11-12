@@ -112,7 +112,7 @@ public:
 
 protected:
     static std::vector<POSTagger::TagItem> pyObjectToTagsVector(HazmPyObject* incoming);
-    static HazmPyObject *pyObjectToTagsVector(const std::vector<POSTagger::TagItem> &tags);
+    static HazmPyObject *tagsVectorToPyObject(const std::vector<POSTagger::TagItem> &tags);
 private:
     HazmPyObject *m_tag_method = nullptr;
 };
@@ -135,6 +135,8 @@ protected:
 private:
     HazmPyObject *m_parse_method = nullptr;
 };
+
+std::string tree2brackets(const Chunker::TreeNode &tree);
 };
 
 #endif // HAZM_H

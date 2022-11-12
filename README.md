@@ -34,7 +34,7 @@ int main()
 
     Chunker chunker("resources/chunker.model");
     auto tagged = tagger.tag(word_tokenize("کتاب خواندن را دوست داریم"));
-    chunker.parse(tagged);
+    tree2brackets(chunker.parse(tagged));
     // '[کتاب خواندن NP] [را POSTP] [دوست داریم VP]'
     
     return 0;

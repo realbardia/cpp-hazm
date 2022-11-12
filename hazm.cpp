@@ -314,7 +314,7 @@ std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* in
     return res;
 }
 
-HazmPyObject *POSTagger::pyObjectToTagsVector(const std::vector<TagItem> &data)
+HazmPyObject *POSTagger::tagsVectorToPyObject(const std::vector<TagItem> &data)
 {
     PyObject* tuple = PyTuple_New( data.size() );
     if (!tuple)
@@ -322,7 +322,7 @@ HazmPyObject *POSTagger::pyObjectToTagsVector(const std::vector<TagItem> &data)
     for (unsigned int i = 0; i < data.size(); i++)
     {
         const auto &t = data.at(i);
-        PyObject *num = vectorToPyObject({t.label, t.word});
+        PyObject *num = vectorToPyObject({t.word, t.label});
         if (!num)
         {
             Py_DECREF(tuple);
@@ -373,7 +373,7 @@ Chunker::TreeNode Chunker::parse(const std::vector<POSTagger::TagItem> &tags)
     if (!m_parse_method)
         throw std::string("Could not load Chunker::parse"s);
 
-    auto args = PyTuple_Pack(1, POSTagger::pyObjectToTagsVector(tags));
+    auto args = PyTuple_Pack(1, POSTagger::tagsVectorToPyObject(tags));
     auto pyres = PyObject_CallObject(m_parse_method, args);
     const auto res = pyObjectToTreeNode(pyres);
     Py_DECREF(pyres);
@@ -389,41 +389,69 @@ Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
 
     auto pop_method = PyObject_GetAttrString(tree, "pop");
     if (!pop_method)
+    {
+        Py_DECREF(label_method);
         throw std::string("Could not load Tree::pop"s);
+    }
 
     auto label_py = PyObject_CallObject(label_method, NULL);
 
     Chunker::TreeNode node;
     node.label = PyUnicode_AsUTF8(label_py);
+    Py_DECREF(label_py);
 
-    auto child_obj = PyObject_CallObject(pop_method, NULL);
-    while (child_obj)
+    const auto size = PyObject_Length(tree);
+    for (int i=0; i<size; i++)
     {
+        auto idx = Py_BuildValue("i", i);
+        auto child_obj = PyObject_GetItem(tree, idx);
         if (PyTuple_Check(child_obj))
         {
             auto vector = pyObjectToVector(child_obj);
 
             Chunker::TreeNode c;
-            c.label = vector.at(0);
-            c.word = vector.at(1);
+            c.label = vector.at(1);
+            c.word = vector.at(0);
             node.childs.push_back(c);
         }
         else
         if (std::string(child_obj->ob_type->tp_name) == "Tree"s)
+        {
             node.childs.push_back( pyObjectToTreeNode(child_obj) );
+        }
 
-        child_obj = PyObject_CallObject(pop_method, NULL);
+        Py_DECREF(idx);
+        Py_DECREF(child_obj);
     }
 
+    Py_DECREF(label_method);
+    Py_DECREF(pop_method);
     return node;
 }
 
-std::vector<std::string> sent_tokenize(const std::string &text)
+std::vector<std::string> Hazm::sent_tokenize(const std::string &text)
 {
     return SentenceTokenizer().tokenize(text);
 }
 
-std::vector<std::string> word_tokenize(const std::string &text)
+std::vector<std::string> Hazm::word_tokenize(const std::string &text)
 {
     return WordTokenizer().tokenize(text);
+}
+
+std::string Hazm::tree2brackets(const Chunker::TreeNode &tree)
+{
+    std::string res;
+    if (tree.childs.size() == 0)
+        return tree.word;
+
+    for (const auto &t: tree.childs)
+        res += tree2brackets(t) + ' ';
+
+    if (tree.label != "S"s)
+    {
+        res += tree.label;
+        res = '[' + res + ']';
+    }
+    return res;
 }
