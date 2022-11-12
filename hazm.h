@@ -101,7 +101,7 @@ class POSTagger: public HazmObject
     friend class Chunker;
 public:
     struct TagItem {
-        std::string label;
+        std::string type;
         std::string word;
     };
 

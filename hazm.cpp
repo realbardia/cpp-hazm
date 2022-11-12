@@ -291,7 +291,7 @@ std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* in
                 continue;
 
             POSTagger::TagItem t;
-            t.label = pair.at(1);
+            t.type = pair.at(1);
             t.word = pair.at(0);
             res.push_back(t);
         }
@@ -306,7 +306,7 @@ std::vector<POSTagger::TagItem> POSTagger::pyObjectToTagsVector(HazmPyObject* in
                 continue;
 
             POSTagger::TagItem t;
-            t.label = pair.at(1);
+            t.type = pair.at(1);
             t.word = pair.at(0);
             res.push_back(t);
         }
@@ -322,7 +322,7 @@ HazmPyObject *POSTagger::tagsVectorToPyObject(const std::vector<TagItem> &data)
     for (unsigned int i = 0; i < data.size(); i++)
     {
         const auto &t = data.at(i);
-        PyObject *num = vectorToPyObject({t.word, t.label});
+        PyObject *num = vectorToPyObject({t.word, t.type});
         if (!num)
         {
             Py_DECREF(tuple);
@@ -397,7 +397,7 @@ Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
     auto label_py = PyObject_CallObject(label_method, NULL);
 
     Chunker::TreeNode node;
-    node.label = PyUnicode_AsUTF8(label_py);
+    node.type = PyUnicode_AsUTF8(label_py);
     Py_DECREF(label_py);
 
     const auto size = PyObject_Length(tree);
@@ -410,7 +410,7 @@ Chunker::TreeNode Chunker::pyObjectToTreeNode(HazmPyObject *tree)
             auto vector = pyObjectToVector(child_obj);
 
             Chunker::TreeNode c;
-            c.label = vector.at(1);
+            c.type = vector.at(1);
             c.word = vector.at(0);
             node.childs.push_back(c);
         }
@@ -448,9 +448,9 @@ std::string Hazm::tree2brackets(const Chunker::TreeNode &tree)
     for (const auto &t: tree.childs)
         res += tree2brackets(t) + ' ';
 
-    if (tree.label != "S"s)
+    if (tree.type != "S"s)
     {
-        res += tree.label;
+        res += tree.type;
         res = '[' + res + ']';
     }
     return res;
