@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <mutex>
 
 typedef struct _object HazmPyObject;
 namespace Hazm
@@ -15,7 +16,6 @@ public:
     HazmObject(const std::string &py_name, const std::vector<std::pair<std::string, std::string>> &kwargs);
     virtual ~HazmObject();
 
-
 protected:
     static HazmPyObject* vectorToPyObject(const std::vector<std::string> &data);
     static std::vector<std::string> pyObjectToVector(HazmPyObject* incoming);
@@ -23,6 +23,7 @@ protected:
     HazmPyObject *m_object = nullptr;
     static HazmPyObject *m_hazm_dict;
     static HazmPyObject *m_hazm_module;
+    static std::mutex m_hazm_mutex;
     static std::unordered_set<HazmObject*> m_hazm_objects;
 };
 

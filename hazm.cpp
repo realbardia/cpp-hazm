@@ -10,11 +10,13 @@ using namespace Hazm;
 
 PyObject *HazmObject::m_hazm_dict = nullptr;
 PyObject *HazmObject::m_hazm_module = nullptr;
+std::mutex HazmObject::m_hazm_mutex;
 std::unordered_set<HazmObject*> HazmObject::m_hazm_objects;
 
 
 HazmObject::HazmObject(const std::string &py_name, const std::vector<std::pair<std::string, std::string> > &kwargs)
 {
+    m_hazm_mutex.lock();
     if (!m_hazm_module)
     {
         if (!Py_IsInitialized())
@@ -29,6 +31,8 @@ HazmObject::HazmObject(const std::string &py_name, const std::vector<std::pair<s
         else
             throw std::string("Hazm not found"s);
     }
+    m_hazm_objects.insert(this);
+    m_hazm_mutex.unlock();
 
     if (kwargs.size())
     {
@@ -52,8 +56,6 @@ HazmObject::HazmObject(const std::string &py_name, const std::vector<std::pair<s
 
     if (!m_object)
         throw std::string("Could not find "s) + py_name;
-
-    m_hazm_objects.insert(this);
 }
 
 HazmPyObject* HazmObject::vectorToPyObject(const std::vector<std::string> &data)
